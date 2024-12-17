@@ -1,28 +1,25 @@
 <?php
-include("conn.php");
-
-// Get product ID from request
-$product_id = intval($_GET['id']);
-
-// Fetch product details from the database
-$query = "SELECT name, price, description FROM products WHERE id = $product_id";
-$result = $conn->query($query);
-
-if ($result->num_rows > 0) {
-    $product = $result->fetch_assoc();
-    echo json_encode($product);
-} else {
-    echo json_encode(['error' => 'Product not found']);
-}
-
+require 'conn.php'; // Adjust path as necessary
 
 if (isset($_GET['id'])) {
-    $product_id = intval($_GET['id']); // Ensure it's an integer for security
-    echo "The product ID is: " . $product_id;
+    $productId = intval($_GET['id']);
+
+    $query = "SELECT id, name, price, description, thumbnail FROM products WHERE id = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param('i', $productId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        $product = $result->fetch_assoc();
+        $imagePath = '../digitals/uploads/thumbnails/' . basename($product['thumbnail']);
+        $product['imagePath'] = file_exists($imagePath) ? $imagePath : 'assets/img/products/vender-upload-preview.jpg';
+
+        echo json_encode($product);
+    } else {
+        echo json_encode(['error' => 'Product not found']);
+    }
 } else {
-    echo "No ID provided.";
+    echo json_encode(['error' => 'Invalid request']);
 }
-
-
-$conn->close();
 ?>
